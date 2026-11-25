@@ -1,0 +1,1464 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generator Struk SPBU Pertamina</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter untuk UI & VT323 / Share Tech Mono / Courier Prime untuk Struk Thermal -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Menggunakan font Inter untuk antarmuka pengguna */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1f5f9;
+        }
+
+        /* Styling khusus kertas struk thermal */
+        .thermal-paper {
+            font-family: 'Share Tech Mono', 'Courier New', monospace;
+            width: 300px; /* Lebar standar kertas thermal 58mm/80mm di layar */
+            background-color: #fbfbfa;
+            color: #1e293b;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            position: relative;
+            line-height: 1.25;
+            letter-spacing: -0.02em;
+            /* Efek tekstur halus kertas */
+            background-image: radial-gradient(rgba(0,0,0,0.03) 1px, transparent 0);
+            background-size: 8px 8px;
+        }
+
+        /* Efek gerigi sobekan kertas atas & bawah */
+        .thermal-paper::before,
+        .thermal-paper::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background-size: 12px 12px;
+        }
+
+        .thermal-paper::before {
+            top: -6px;
+            background-image: linear-gradient(135deg, transparent 50%, #fbfbfa 50%), linear-gradient(225deg, transparent 50%, #fbfbfa 50%);
+        }
+
+        .thermal-paper::after {
+            bottom: -6px;
+            background-image: linear-gradient(45deg, transparent 50%, #fbfbfa 50%), linear-gradient(-45deg, transparent 50%, #fbfbfa 50%);
+        }
+
+        /* Efek tinta thermal sedikit memudar/realistis */
+        .thermal-ink {
+            color: #26292e;
+            text-shadow: 0 0 0.4px rgba(38, 41, 46, 0.4);
+        }
+
+        /* Pengaturan khusus saat dicetak (Print) */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #printable-area, #printable-area * {
+                visibility: visible;
+            }
+            #printable-area {
+                position: fixed;
+                left: 0;
+                top: 0;
+                width: 58mm; /* Ukuran kertas printer thermal */
+                padding: 2mm !important;
+                margin: 0 !important;
+                box-shadow: none !important;
+                background: #ffffff !important;
+                color: #000000 !important;
+            }
+            .thermal-paper::before,
+            .thermal-paper::after {
+                display: none !important;
+            }
+            .thermal-ink {
+                color: #000000 !important;
+                text-shadow: none !important;
+            }
+            @page {
+                margin: 0;
+                size: auto;
+            }
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <!-- Header Aplikasi -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-sm">
+        <div class="max-w-6xl mx-auto px-4 py-3.5 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <!-- Ikon Pertamina Sederhana -->
+                <div class="w-9 h-9 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold shadow-sm">
+                    <svg class="w-6 h-6" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M16 6L23 6L18 14L11 14L16 6Z" fill="#EF4444"/>
+                        <path d="M10 16L17 16L12 24L5 24L10 16Z" fill="#3B82F6"/>
+                        <path d="M21 15L28 15L23 23L16 23L21 15Z" fill="#22C55E"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold text-slate-900 leading-tight">Generator Struk SPBU</h1>
+                    <p class="text-xs text-slate-500">Buat & Cetak Nota Thermal BBM Pertamina</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2">
+                <button type="button" onclick="openSettingsModal()" class="px-3.5 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition flex items-center gap-1.5 cursor-pointer border border-slate-200">
+                    <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                    Pengaturan
+                </button>
+                <button type="button" onclick="resetToDefault()" class="px-3.5 py-2 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition cursor-pointer">
+                    Reset Contoh
+                </button>
+                <button type="button" onclick="generateRandomTrans()" class="px-3.5 py-2 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition cursor-pointer">
+                    Acak No. Trans & Waktu
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Konten Utama -->
+    <main class="flex-1 max-w-6xl w-full mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        
+        <!-- Kolom Kiri: Form Pengaturan Data Struk -->
+        <section class="lg:col-span-7 bg-white rounded-2xl shadow-sm border border-slate-200 p-5 sm:p-6 space-y-6">
+            <div class="border-b border-slate-100 pb-3">
+                <h2 class="text-base font-semibold text-slate-800">1. Informasi SPBU & Transaksi</h2>
+                <p class="text-xs text-slate-500 mt-0.5">Sesuaikan identitas SPBU, waktu, dan nomor transaksi.</p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Nomor SPBU</label>
+                    <input type="text" id="in-spbu-no" value="5468104" oninput="updateReceipt()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Nama SPBU</label>
+                    <input type="text" id="in-spbu-name" value="SPBU GAJAH MADA NO. 331" oninput="updateReceipt()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+                <div class="sm:col-span-2">
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Alamat SPBU</label>
+                    <input type="text" id="in-spbu-addr" value="JL. GAJAH MADA NO.331" oninput="updateReceipt()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Shift</label>
+                    <input type="text" id="in-shift" value="1" oninput="updateReceipt()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-700 mb-1">No. Transaksi</label>
+                    <input type="text" id="in-trans" value="9112437" oninput="updateReceipt()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+                <div class="sm:col-span-2">
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Waktu (DD/MM/YYYY HH:MM:SS)</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="in-waktu" value="19/11/2026 11:13:33" oninput="updateReceipt()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                        <button type="button" onclick="setNowTime()" class="px-3 py-2 text-xs font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg whitespace-nowrap cursor-pointer">
+                            Sekarang
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="border-b border-slate-100 pb-3 pt-2">
+                <h2 class="text-base font-semibold text-slate-800">2. Detail Pengisian & Harga BBM</h2>
+                <p class="text-xs text-slate-500 mt-0.5">Pilih jenis BBM dan isi nominal beli atau volume liter.</p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Pulau / Pompa</label>
+                    <input type="text" id="in-pompa" value="7" oninput="updateReceipt()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Nama Operator</label>
+                    <input type="text" id="in-operator" value="DEWI" oninput="updateReceipt()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-700 mb-1">No. Plat Kendaraan</label>
+                    <input type="text" id="in-plat" value="P1610GI" placeholder="Kosongkan jika tidak ada" oninput="updateReceipt()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none uppercase">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Jenis BBM (Preset Cepat)</label>
+                    <select id="in-bbm-preset" onchange="applyBbmPreset()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white">
+                        <option value="PERTALITE" selected>PERTALITE (Subsidi)</option>
+                        <option value="BIO SOLAR">BIO SOLAR (Subsidi)</option>
+                        <option value="PERTAMAX">PERTAMAX (Non-Subsidi)</option>
+                        <option value="PERTAMAX GREEN 95">PERTAMAX GREEN 95</option>
+                        <option value="PERTAMAX TURBO">PERTAMAX TURBO</option>
+                        <option value="DEXLITE">DEXLITE</option>
+                        <option value="PERTAMINA DEX">PERTAMINA DEX</option>
+                        <option value="CUSTOM">Kustom / Lainnya...</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Teks Jenis BBM di Struk</label>
+                    <input type="text" id="in-bbm-name" value="PERTALITE" oninput="updateReceipt()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none uppercase">
+                </div>
+            </div>
+
+            <!-- Pengaturan Harga per Liter -->
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200/80 space-y-4">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold text-slate-700 uppercase tracking-wider">Rincian Harga Per Liter (Rp)</span>
+                    <label class="inline-flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer">
+                        <input type="checkbox" id="in-is-subsidi" checked onchange="toggleSubsidiFields()" class="rounded text-blue-600 focus:ring-blue-500">
+                        Tampilkan Info Subsidi
+                    </label>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div id="wrap-harga-nonsubsidi">
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Harga Non Subsidi</label>
+                        <input type="number" id="in-harga-nonsubsidi" value="19629" oninput="calculateFromHarga()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div id="wrap-subsidi-liter">
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Subsidi Pemerintah</label>
+                        <input type="number" id="in-subsidi-liter" value="9629" readonly class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-100 text-slate-600 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">Harga Jual / Liter</label>
+                        <input type="number" id="in-harga-jual" value="10000" oninput="calculateFromHarga()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white font-semibold focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kalkulator Volume & Nominal Bayar -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Volume (Liter)</label>
+                    <input type="number" step="0.01" id="in-volume" value="13.50" oninput="calculateFromVolume()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none font-semibold">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Dibayar Konsumen (Rp)</label>
+                    <input type="number" id="in-bayar" value="135000" oninput="calculateFromBayar()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none font-semibold text-blue-700">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Metode Pembayaran</label>
+                    <select id="in-payment" onchange="updateReceipt()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white">
+                        <option value="CASH" selected>CASH</option>
+                        <option value="QRIS">QRIS</option>
+                        <option value="DEBIT">DEBIT</option>
+                        <option value="MYPERTAMINA">MYPERTAMINA</option>
+                    </select>
+                </div>
+            </div>
+        </section>
+
+        <!-- Kolom Kanan: Pratinjau Struk Thermal & Tombol Cetak -->
+        <section class="lg:col-span-5 flex flex-col items-center">
+            <div class="w-full flex items-center justify-between mb-4 px-2">
+                <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Pratinjau Kertas Thermal</span>
+                <span class="text-xs text-slate-400">Ukuran 58mm</span>
+            </div>
+
+            <!-- Area Kertas Struk Thermal -->
+            <div class="py-4 px-6 bg-slate-200/70 rounded-2xl border border-slate-300/60 w-full flex justify-center overflow-x-auto">
+                <div id="printable-area" class="thermal-paper px-5 py-6 text-[13px] select-all">
+                    <div class="thermal-ink">
+                        
+                        <!-- Header Logo & Nama Pertamina -->
+                        <div class="flex flex-col items-center text-center mb-2">
+                            <!-- Container Logo Kustom (Jika Diunggah) -->
+                            <div id="out-custom-logo-wrap" class="hidden mb-1.5 flex flex-col items-center">
+                                <img id="out-custom-logo-img" src="" alt="Logo SPBU" class="max-h-11 max-w-[180px] object-contain grayscale contrast-125">
+                                <span id="out-custom-logo-text" class="font-bold tracking-wider text-[14px] mt-0.5" style="font-family: 'Inter', sans-serif;">PERTAMINA</span>
+                            </div>
+
+                            <!-- Container Logo Default Pertamina -->
+                            <div id="out-default-logo-wrap" class="flex items-center justify-center gap-1.5 mb-0.5">
+                                <!-- Logo Pertamina Monokrom / Thermal Style -->
+                                <svg class="w-7 h-6" viewBox="0 0 38 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <!-- Bagian Atas (Merah pada aslinya, gelap pada thermal) -->
+                                    <path d="M17.5 2L25.5 2L20.5 10.5L12.5 10.5L17.5 2Z" fill="#2d3748"/>
+                                    <!-- Bagian Kiri Bawah (Biru pada aslinya, gelap pekat pada thermal) -->
+                                    <path d="M10.5 12.5L18.5 12.5L13 22L5 22L10.5 12.5Z" fill="#1a202c"/>
+                                    <!-- Bagian Kanan (Hijau pada aslinya, abu gelap pada thermal) -->
+                                    <path d="M22.5 11.5L30.5 11.5L25 21L17 21L22.5 11.5Z" fill="#4a5568"/>
+                                </svg>
+                                <span id="out-header-brand-text" class="font-bold tracking-wider text-[14px]" style="font-family: 'Inter', sans-serif;">PERTAMINA</span>
+                            </div>
+                            <div id="out-spbu-no" class="text-[14px] tracking-wide">5468104</div>
+                            <div id="out-spbu-name" class="text-[14px] uppercase">SPBU GAJAH MADA NO. 331</div>
+                            <div id="out-spbu-addr" class="text-[14px] uppercase">JL. GAJAH MADA NO.331</div>
+                        </div>
+
+                        <!-- Info Shift, No Trans, Waktu -->
+                        <div class="mt-2 mb-3 text-[13px]">
+                            <div class="flex justify-between">
+                                <span>Shift: <span id="out-shift">1</span></span>
+                                <span>No. Trans: <span id="out-trans">9112437</span></span>
+                            </div>
+                            <div>Waktu: <span id="out-waktu">19/11/2026 11:13:33</span></div>
+                        </div>
+
+                        <!-- Garis Pemisah Tipis -->
+                        <div class="border-b border-slate-300/80 my-2.5"></div>
+
+                        <!-- Detail Pompa, Operator, Jenis BBM, Volume -->
+                        <div class="space-y-0.5 text-[13.5px]">
+                            <div class="flex">
+                                <span class="w-[125px] shrink-0">Pulau/Pompa</span>
+                                <span>: <span id="out-pompa">7</span></span>
+                            </div>
+                            <div class="flex">
+                                <span class="w-[125px] shrink-0">Operator</span>
+                                <span class="uppercase">: <span id="out-operator">DEWI</span></span>
+                            </div>
+                            <div class="flex">
+                                <span class="w-[125px] shrink-0">Jenis BBM</span>
+                                <span class="uppercase">: <span id="out-bbm-name">PERTALITE</span></span>
+                            </div>
+                            <div class="flex">
+                                <span class="w-[125px] shrink-0">Volume</span>
+                                <span>: <span id="out-volume">13.50</span> liter</span>
+                            </div>
+                        </div>
+
+                        <!-- Informasi Harga BBM (Rp/Liter) -->
+                        <div class="mt-3.5 text-[13.5px]">
+                            <div class="mb-0.5">Informasi Harga BBM (Rp/Liter)</div>
+                            <div id="out-subsidi-harga-rows" class="space-y-0.5">
+                                <div class="flex">
+                                    <span class="w-[155px] shrink-0">Harga Non Subsidi</span>
+                                    <span>: <span id="out-harga-nonsubsidi">19,629</span></span>
+                                </div>
+                                <div class="flex">
+                                    <span class="w-[155px] shrink-0">Subsidi Pemerintah</span>
+                                    <span>: <span id="out-subsidi-liter">9,629</span></span>
+                                </div>
+                            </div>
+                            <div class="flex">
+                                <span class="w-[155px] shrink-0">Harga Jual</span>
+                                <span>: <span id="out-harga-jual">10,000</span></span>
+                            </div>
+                        </div>
+
+                        <!-- Total Penjualan (Rp) -->
+                        <div class="mt-3.5 text-[13.5px]">
+                            <div class="mb-0.5">Total Penjualan (Rp)</div>
+                            <div id="out-subsidi-total-rows" class="space-y-0.5">
+                                <div class="flex">
+                                    <span class="w-[155px] shrink-0">Tanpa Subsidi</span>
+                                    <span>: <span id="out-total-tanpa-subsidi">264,991</span></span>
+                                </div>
+                                <div class="flex">
+                                    <span class="w-[155px] shrink-0">Subsidi Pemerintah</span>
+                                    <span>: <span id="out-total-subsidi">129,991</span></span>
+                                </div>
+                            </div>
+                            <div class="flex">
+                                <span class="w-[155px] shrink-0">Dibayar Konsumen</span>
+                                <span>: <span id="out-dibayar">135,000</span></span>
+                            </div>
+                        </div>
+
+                        <!-- Garis Pemisah Tipis -->
+                        <div class="border-b border-slate-300/80 my-3"></div>
+
+                        <!-- Metode Pembayaran -->
+                        <div class="text-[13.5px]">
+                            <div id="out-payment" class="uppercase">CASH</div>
+                            <div class="text-right mt-0.5" id="out-payment-amount">135,000</div>
+                        </div>
+
+                        <!-- Garis Pemisah Tipis -->
+                        <div class="border-b border-slate-300/80 my-3"></div>
+
+                        <!-- No. Plat -->
+                        <div id="out-plat-row" class="text-[13.5px] flex">
+                            <span class="w-[85px] shrink-0">No. Plat</span>
+                            <span class="uppercase">: <span id="out-plat">P1610GI</span></span>
+                        </div>
+
+                        <!-- Footer Pesan Subsidi -->
+                        <div id="out-footer-subsidi" class="mt-4 text-center text-[12.5px] leading-[1.3] px-1">
+                            Anda mendapat subsidi dari Pemerintah sebesar Rp <span id="out-footer-subsidi-val">129,991</span> (Perhitungan Subsidi Unaudited atau Estimasi). Gunakan BBM Subsidi secara bijak.
+                        </div>
+
+                        <!-- Footer Non-Subsidi (Muncul jika subsidi dimatikan) -->
+                        <div id="out-footer-nonsubsidi" class="hidden mt-4 text-center text-[12.5px] leading-[1.3] px-1">
+                            Terima kasih atas kunjungan Anda.<br>Selamat jalan dan semoga selamat sampai tujuan.
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tombol Aksi Cetak -->
+            <div class="w-full mt-5 flex flex-col sm:flex-row gap-2.5">
+                <button type="button" onclick="window.print()" class="flex-1 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold py-3 px-4 rounded-xl shadow-md shadow-blue-600/20 flex items-center justify-center gap-2 transition cursor-pointer text-sm">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+                    </svg>
+                    Cetak Browser
+                </button>
+                <button type="button" onclick="printEscPosDirect()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-semibold py-3 px-4 rounded-xl shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2 transition cursor-pointer text-sm">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                    Cetak ESC/POS
+                </button>
+            </div>
+            <p class="text-[11px] text-slate-500 mt-2 text-center">
+                Gunakan <b>Cetak ESC/POS</b> untuk cetak langsung ke printer thermal Bluetooth/USB tanpa dialog browser.
+            </p>
+        </section>
+
+    </main>
+
+    <!-- MODAL PENGATURAN (Identitas SPBU, Logo, Harga BBM, Printer ESC/POS) -->
+    <div id="settings-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+            <!-- Header Modal -->
+            <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+                <div>
+                    <h3 class="text-base font-bold text-slate-900">Pengaturan Sistem & Printer</h3>
+                    <p class="text-xs text-slate-500">Konfigurasi tersimpan otomatis di browser Anda</p>
+                </div>
+                <button type="button" onclick="closeSettingsModal()" class="p-2 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-200/70 transition cursor-pointer">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Navigasi Tab Pengaturan -->
+            <div class="flex border-b border-slate-200 bg-white px-4 overflow-x-auto">
+                <button type="button" onclick="switchSettingsTab('spbu')" id="tab-btn-spbu" class="settings-tab-btn px-4 py-3 text-xs font-semibold border-b-2 border-blue-600 text-blue-600 whitespace-nowrap cursor-pointer">
+                    1. Identitas & Logo
+                </button>
+                <button type="button" onclick="switchSettingsTab('bbm')" id="tab-btn-bbm" class="settings-tab-btn px-4 py-3 text-xs font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-800 whitespace-nowrap cursor-pointer">
+                    2. Daftar Harga BBM
+                </button>
+                <button type="button" onclick="switchSettingsTab('printer')" id="tab-btn-printer" class="settings-tab-btn px-4 py-3 text-xs font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-800 whitespace-nowrap cursor-pointer">
+                    3. Printer Thermal (ESC/POS)
+                </button>
+            </div>
+
+            <!-- Isi Tab Pengaturan -->
+            <div class="p-6 overflow-y-auto flex-1 space-y-5">
+                
+                <!-- TAB 1: IDENTITAS & LOGO -->
+                <div id="tab-panel-spbu" class="settings-tab-panel space-y-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">Nomor SPBU Default</label>
+                            <input type="text" id="set-spbu-no" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">Teks Judul Header (Brand)</label>
+                            <input type="text" id="set-brand-text" value="PERTAMINA" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs font-medium text-slate-700 mb-1">Nama SPBU Default</label>
+                            <input type="text" id="set-spbu-name" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs font-medium text-slate-700 mb-1">Alamat SPBU Default</label>
+                            <input type="text" id="set-spbu-addr" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                    </div>
+
+                    <!-- Pengaturan Logo Opsional -->
+                    <div class="border-t border-slate-200 pt-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <div>
+                                <h4 class="text-xs font-semibold text-slate-800">Logo Struk (Opsional)</h4>
+                                <p class="text-[11px] text-slate-500">Unggah gambar logo sendiri (PNG/JPG/SVG) atau gunakan logo bawaan Pertamina.</p>
+                            </div>
+                            <button type="button" onclick="removeCustomLogo()" id="btn-remove-logo" class="hidden px-2.5 py-1.5 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg cursor-pointer">
+                                Hapus Logo Kustom
+                            </button>
+                        </div>
+
+                        <div class="flex flex-col sm:flex-row items-center gap-4 bg-slate-50 p-4 rounded-xl border border-dashed border-slate-300">
+                            <div class="w-24 h-16 bg-white rounded-lg border border-slate-200 flex items-center justify-center p-2 shrink-0 overflow-hidden">
+                                <img id="set-logo-preview" src="" alt="Preview" class="hidden max-h-full max-w-full object-contain">
+                                <span id="set-logo-placeholder" class="text-[11px] text-slate-400 text-center">Logo Bawaan</span>
+                            </div>
+                            <div class="flex-1 w-full">
+                                <input type="file" id="set-logo-file" accept="image/*" onchange="handleLogoUpload(event)" class="block w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-3.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
+                                <label class="inline-flex items-center gap-2 text-xs text-slate-600 mt-2.5 cursor-pointer">
+                                    <input type="checkbox" id="set-show-brand-with-logo" checked class="rounded text-blue-600">
+                                    Tampilkan teks brand di bawah logo kustom
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 2: DAFTAR HARGA BBM -->
+                <div id="tab-panel-bbm" class="settings-tab-panel hidden space-y-4">
+                    <div class="flex items-center justify-between">
+                        <p class="text-xs text-slate-600">Atur harga per liter untuk masing-masing jenis BBM (akan otomatis mengisi kalkulator struk).</p>
+                        <button type="button" onclick="resetBbmPricesDefault()" class="text-xs text-blue-600 hover:underline font-medium cursor-pointer">
+                            Reset Harga Standar
+                        </button>
+                    </div>
+
+                    <div id="settings-bbm-list" class="space-y-2.5 max-h-[320px] overflow-y-auto pr-1">
+                        <!-- Baris harga BBM di-render oleh JavaScript -->
+                    </div>
+                </div>
+
+                <!-- TAB 3: PRINTER THERMAL (ESC/POS) -->
+                <div id="tab-panel-printer" class="settings-tab-panel hidden space-y-4">
+                    <div class="bg-blue-50/70 border border-blue-200 rounded-xl p-3.5 text-xs text-blue-900 space-y-1">
+                        <div class="font-semibold flex items-center gap-1.5">
+                            <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            Koneksi Langsung Printer Thermal (ESC/POS)
+                        </div>
+                        <p class="text-[11px] text-blue-800 leading-relaxed">
+                            Mendukung printer thermal 58mm / 80mm melalui <b>Web Bluetooth</b> (printer kasir Bluetooth) atau <b>Web Serial</b> (printer USB/COM) pada browser Chrome/Edge.
+                        </p>
+                    </div>
+
+                    <!-- Status & Tombol Koneksi -->
+                    <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold text-slate-700">Status Koneksi Perangkat:</span>
+                            <span id="escpos-status-badge" class="px-2.5 py-1 text-[11px] font-semibold rounded-full bg-slate-200 text-slate-700">
+                                Belum Terhubung
+                            </span>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            <button type="button" onclick="connectBluetoothPrinter()" class="px-3.5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg flex items-center justify-center gap-2 transition cursor-pointer">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"></path>
+                                </svg>
+                                Hubungkan Bluetooth
+                            </button>
+                            <button type="button" onclick="connectSerialPrinter()" class="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold rounded-lg flex items-center justify-center gap-2 transition cursor-pointer">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                                </svg>
+                                Hubungkan USB / Serial
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Parameter ESC/POS -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">Lebar Kertas & Karakter</label>
+                            <select id="set-escpos-width" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white outline-none">
+                                <option value="32" selected>58mm (32 Karakter / Baris)</option>
+                                <option value="42">76mm / 80mm Font B (42 Karakter)</option>
+                                <option value="48">80mm Standar (48 Karakter / Baris)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">Jumlah Feed Baris Akhir</label>
+                            <input type="number" id="set-escpos-feed" value="4" min="1" max="10" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg outline-none">
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap gap-4 pt-1">
+                        <label class="inline-flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
+                            <input type="checkbox" id="set-escpos-print-logo" checked class="rounded text-blue-600">
+                            Cetak Logo Bitmap (ESC * / GS v 0)
+                        </label>
+                        <label class="inline-flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
+                            <input type="checkbox" id="set-escpos-autocut" checked class="rounded text-blue-600">
+                            Auto-Cut Kertas (GS V 66)
+                        </label>
+                    </div>
+
+                    <div class="pt-2 border-t border-slate-200 flex items-center justify-between">
+                        <button type="button" onclick="testPrintEscPos()" class="px-3.5 py-2 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg cursor-pointer">
+                            Tes Cetak ESC/POS
+                        </button>
+                        <button type="button" onclick="downloadEscPosBinary()" class="px-3.5 py-2 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg cursor-pointer">
+                            Unduh File Raw (.bin)
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Footer Modal -->
+            <div class="px-6 py-3.5 border-t border-slate-200 bg-slate-50 flex items-center justify-end gap-2.5">
+                <button type="button" onclick="closeSettingsModal()" class="px-4 py-2 text-xs font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-100 rounded-lg cursor-pointer">
+                    Batal
+                </button>
+                <button type="button" onclick="saveSettings()" class="px-5 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm cursor-pointer">
+                    Simpan & Terapkan
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notifikasi Toast Sederhana (Pengganti alert) -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white text-xs font-medium px-4 py-2.5 rounded-lg shadow-lg opacity-0 pointer-events-none transition-opacity duration-300 z-50">
+        Data diperbarui
+    </div>
+
+    <script>
+        /**
+         * Daftar harga preset default BBM Pertamina
+         */
+        const DEFAULT_BBM_PRESETS = {
+            'PERTALITE': { isSubsidi: true, nonSubsidi: 19629, jual: 10000 },
+            'BIO SOLAR': { isSubsidi: true, nonSubsidi: 13500, jual: 6800 },
+            'PERTAMAX': { isSubsidi: false, nonSubsidi: 12100, jual: 12100 },
+            'PERTAMAX GREEN 95': { isSubsidi: false, nonSubsidi: 13150, jual: 13150 },
+            'PERTAMAX TURBO': { isSubsidi: false, nonSubsidi: 13500, jual: 13500 },
+            'DEXLITE': { isSubsidi: false, nonSubsidi: 13400, jual: 13400 },
+            'PERTAMINA DEX': { isSubsidi: false, nonSubsidi: 13800, jual: 13800 }
+        };
+
+        // State konfigurasi aplikasi (dimuat dari localStorage jika tersedia)
+        let appConfig = {
+            spbuNo: '5468104',
+            spbuName: 'SPBU GAJAH MADA NO. 331',
+            spbuAddr: 'JL. GAJAH MADA NO.331',
+            brandText: 'PERTAMINA',
+            customLogoDataUrl: '',
+            showBrandWithLogo: true,
+            bbmPresets: JSON.parse(JSON.stringify(DEFAULT_BBM_PRESETS)),
+            escpos: {
+                charWidth: 32,
+                feedLines: 4,
+                printLogo: true,
+                autoCut: true
+            }
+        };
+
+        // Variabel koneksi perangkat ESC/POS aktif
+        let bleCharacteristic = null;
+        let serialPort = null;
+        let tempLogoDataUrl = '';
+
+        /**
+         * Memuat pengaturan tersimpan dari localStorage
+         */
+        function loadSavedConfig() {
+            try {
+                const saved = localStorage.getItem('pertamina_struk_config_v1');
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    appConfig = {
+                        ...appConfig,
+                        ...parsed,
+                        bbmPresets: { ...DEFAULT_BBM_PRESETS, ...(parsed.bbmPresets || {}) },
+                        escpos: { ...appConfig.escpos, ...(parsed.escpos || {}) }
+                    };
+                }
+            } catch (e) {
+                console.warn('Gagal memuat konfigurasi lokal:', e);
+            }
+            applyConfigToMainForm();
+        }
+
+        /**
+         * Menerapkan konfigurasi SPBU & Logo ke form utama dan pratinjau struk
+         */
+        function applyConfigToMainForm() {
+            document.getElementById('in-spbu-no').value = appConfig.spbuNo;
+            document.getElementById('in-spbu-name').value = appConfig.spbuName;
+            document.getElementById('in-spbu-addr').value = appConfig.spbuAddr;
+
+            const customWrap = document.getElementById('out-custom-logo-wrap');
+            const defaultWrap = document.getElementById('out-default-logo-wrap');
+            const customImg = document.getElementById('out-custom-logo-img');
+            const customText = document.getElementById('out-custom-logo-text');
+            const headerBrand = document.getElementById('out-header-brand-text');
+
+            headerBrand.textContent = appConfig.brandText || 'PERTAMINA';
+            customText.textContent = appConfig.brandText || 'PERTAMINA';
+
+            if (appConfig.customLogoDataUrl) {
+                customImg.src = appConfig.customLogoDataUrl;
+                customWrap.classList.remove('hidden');
+                defaultWrap.classList.add('hidden');
+                if (appConfig.showBrandWithLogo && appConfig.brandText.trim() !== '') {
+                    customText.classList.remove('hidden');
+                } else {
+                    customText.classList.add('hidden');
+                }
+            } else {
+                customWrap.classList.add('hidden');
+                defaultWrap.classList.remove('hidden');
+            }
+
+            applyBbmPreset();
+        }
+
+        /**
+         * Membuka modal pengaturan dan mengisi nilai terkini
+         */
+        function openSettingsModal() {
+            document.getElementById('set-spbu-no').value = appConfig.spbuNo;
+            document.getElementById('set-spbu-name').value = appConfig.spbuName;
+            document.getElementById('set-spbu-addr').value = appConfig.spbuAddr;
+            document.getElementById('set-brand-text').value = appConfig.brandText;
+            document.getElementById('set-show-brand-with-logo').checked = appConfig.showBrandWithLogo;
+
+            tempLogoDataUrl = appConfig.customLogoDataUrl || '';
+            updateSettingsLogoPreview();
+
+            // Render daftar harga BBM
+            renderSettingsBbmList();
+
+            // Isi pengaturan ESC/POS
+            document.getElementById('set-escpos-width').value = String(appConfig.escpos.charWidth);
+            document.getElementById('set-escpos-feed').value = appConfig.escpos.feedLines;
+            document.getElementById('set-escpos-print-logo').checked = appConfig.escpos.printLogo;
+            document.getElementById('set-escpos-autocut').checked = appConfig.escpos.autoCut;
+
+            const modal = document.getElementById('settings-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeSettingsModal() {
+            const modal = document.getElementById('settings-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function switchSettingsTab(tabName) {
+            document.querySelectorAll('.settings-tab-panel').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.settings-tab-btn').forEach(btn => {
+                btn.classList.remove('border-blue-600', 'text-blue-600');
+                btn.classList.add('border-transparent', 'text-slate-500');
+            });
+
+            document.getElementById(`tab-panel-${tabName}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`tab-btn-${tabName}`);
+            activeBtn.classList.remove('border-transparent', 'text-slate-500');
+            activeBtn.classList.add('border-blue-600', 'text-blue-600');
+        }
+
+        /**
+         * Menangani unggahan file gambar logo kustom
+         */
+        function handleLogoUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                tempLogoDataUrl = e.target.result;
+                updateSettingsLogoPreview();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removeCustomLogo() {
+            tempLogoDataUrl = '';
+            document.getElementById('set-logo-file').value = '';
+            updateSettingsLogoPreview();
+        }
+
+        function updateSettingsLogoPreview() {
+            const img = document.getElementById('set-logo-preview');
+            const placeholder = document.getElementById('set-logo-placeholder');
+            const btnRemove = document.getElementById('btn-remove-logo');
+
+            if (tempLogoDataUrl) {
+                img.src = tempLogoDataUrl;
+                img.classList.remove('hidden');
+                placeholder.classList.add('hidden');
+                btnRemove.classList.remove('hidden');
+            } else {
+                img.src = '';
+                img.classList.add('hidden');
+                placeholder.classList.remove('hidden');
+                btnRemove.classList.add('hidden');
+            }
+        }
+
+        /**
+         * Render daftar harga BBM di dalam tab Pengaturan
+         */
+        function renderSettingsBbmList() {
+            const container = document.getElementById('settings-bbm-list');
+            container.innerHTML = '';
+
+            Object.keys(appConfig.bbmPresets).forEach((key) => {
+                const item = appConfig.bbmPresets[key];
+                const row = document.createElement('div');
+                row.className = 'p-3 rounded-xl border border-slate-200 bg-slate-50/70 grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-center';
+                row.innerHTML = `
+                    <div class="sm:col-span-4">
+                        <div class="text-xs font-bold text-slate-800">${key}</div>
+                        <label class="inline-flex items-center gap-1.5 text-[11px] text-slate-600 mt-1 cursor-pointer">
+                            <input type="checkbox" data-bbm-sub="${key}" ${item.isSubsidi ? 'checked' : ''} class="rounded text-blue-600">
+                            BBM Subsidi
+                        </label>
+                    </div>
+                    <div class="sm:col-span-4">
+                        <label class="block text-[10px] text-slate-500 mb-0.5">Harga Non-Subsidi (Rp)</label>
+                        <input type="number" data-bbm-nonsub="${key}" value="${item.nonSubsidi}" class="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white">
+                    </div>
+                    <div class="sm:col-span-4">
+                        <label class="block text-[10px] text-slate-700 font-semibold mb-0.5">Harga Jual / Liter (Rp)</label>
+                        <input type="number" data-bbm-jual="${key}" value="${item.jual}" class="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white font-semibold text-blue-700">
+                    </div>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        function resetBbmPricesDefault() {
+            appConfig.bbmPresets = JSON.parse(JSON.stringify(DEFAULT_BBM_PRESETS));
+            renderSettingsBbmList();
+            showToast('Daftar harga BBM direset ke standar');
+        }
+
+        /**
+         * Menyimpan seluruh pengaturan dari Modal ke appConfig dan localStorage
+         */
+        function saveSettings() {
+            appConfig.spbuNo = document.getElementById('set-spbu-no').value.trim() || '5468104';
+            appConfig.spbuName = document.getElementById('set-spbu-name').value.trim() || 'SPBU GAJAH MADA NO. 331';
+            appConfig.spbuAddr = document.getElementById('set-spbu-addr').value.trim() || 'JL. GAJAH MADA NO.331';
+            appConfig.brandText = document.getElementById('set-brand-text').value.trim();
+            appConfig.customLogoDataUrl = tempLogoDataUrl;
+            appConfig.showBrandWithLogo = document.getElementById('set-show-brand-with-logo').checked;
+
+            // Simpan harga BBM
+            Object.keys(appConfig.bbmPresets).forEach((key) => {
+                const subCheck = document.querySelector(`[data-bbm-sub="${key}"]`);
+                const nonSubInput = document.querySelector(`[data-bbm-nonsub="${key}"]`);
+                const jualInput = document.querySelector(`[data-bbm-jual="${key}"]`);
+                if (subCheck && nonSubInput && jualInput) {
+                    const jualVal = parseFloat(jualInput.value) || 0;
+                    const nonSubVal = subCheck.checked ? (parseFloat(nonSubInput.value) || jualVal) : jualVal;
+                    appConfig.bbmPresets[key] = {
+                        isSubsidi: subCheck.checked,
+                        nonSubsidi: nonSubVal,
+                        jual: jualVal
+                    };
+                }
+            });
+
+            // Simpan pengaturan ESC/POS
+            appConfig.escpos.charWidth = parseInt(document.getElementById('set-escpos-width').value, 10) || 32;
+            appConfig.escpos.feedLines = parseInt(document.getElementById('set-escpos-feed').value, 10) || 4;
+            appConfig.escpos.printLogo = document.getElementById('set-escpos-print-logo').checked;
+            appConfig.escpos.autoCut = document.getElementById('set-escpos-autocut').checked;
+
+            try {
+                localStorage.setItem('pertamina_struk_config_v1', JSON.stringify(appConfig));
+            } catch (e) {
+                console.warn('Gagal menyimpan ke localStorage:', e);
+            }
+
+            applyConfigToMainForm();
+            closeSettingsModal();
+            showToast('Pengaturan berhasil disimpan & diterapkan');
+        }
+
+        /**
+         * =========================================================================
+         * MODUL PRINTER THERMAL ESC/POS (WEB BLUETOOTH & WEB SERIAL)
+         * =========================================================================
+         */
+        function updatePrinterStatusBadge(text, isConnected) {
+            const badge = document.getElementById('escpos-status-badge');
+            badge.textContent = text;
+            if (isConnected) {
+                badge.className = 'px-2.5 py-1 text-[11px] font-semibold rounded-full bg-emerald-100 text-emerald-800';
+            } else {
+                badge.className = 'px-2.5 py-1 text-[11px] font-semibold rounded-full bg-slate-200 text-slate-700';
+            }
+        }
+
+        async function connectBluetoothPrinter() {
+            if (!navigator.bluetooth) {
+                showToast('Browser tidak mendukung Web Bluetooth. Gunakan Chrome/Edge.');
+                return;
+            }
+            try {
+                updatePrinterStatusBadge('Mencari perangkat...', false);
+                // UUID umum layanan printer thermal Bluetooth BLE
+                const optionalServices = [
+                    '000018f0-0000-1000-8000-00805f9b34fb',
+                    'e7810a71-73ae-499d-8c15-faa9aef0c3f2',
+                    '49535343-fe7d-4ae5-8fa9-9fafd205e455'
+                ];
+                const device = await navigator.bluetooth.requestDevice({
+                    acceptAllDevices: true,
+                    optionalServices: optionalServices
+                });
+
+                const server = await device.gatt.connect();
+                const services = await server.getPrimaryServices();
+                let foundChar = null;
+
+                for (const service of services) {
+                    const chars = await service.getCharacteristics();
+                    for (const c of chars) {
+                        if (c.properties.write || c.properties.writeWithoutResponse) {
+                            foundChar = c;
+                            break;
+                        }
+                    }
+                    if (foundChar) break;
+                }
+
+                if (!foundChar) {
+                    throw new Error('Karakteristik Write ESC/POS tidak ditemukan pada perangkat.');
+                }
+
+                bleCharacteristic = foundChar;
+                serialPort = null;
+                updatePrinterStatusBadge(`BT: ${device.name || 'Printer Thermal'}`, true);
+                showToast(`Terhubung ke ${device.name || 'Printer Bluetooth'}`);
+            } catch (err) {
+                console.error(err);
+                updatePrinterStatusBadge('Gagal / Dibatalkan', false);
+                showToast('Koneksi Bluetooth dibatalkan atau gagal');
+            }
+        }
+
+        async function connectSerialPrinter() {
+            if (!('serial' in navigator)) {
+                showToast('Browser tidak mendukung Web Serial. Gunakan Chrome/Edge desktop.');
+                return;
+            }
+            try {
+                const port = await navigator.serial.requestPort();
+                await port.open({ baudRate: 9600 });
+                serialPort = port;
+                bleCharacteristic = null;
+                updatePrinterStatusBadge('USB/Serial Terhubung', true);
+                showToast('Printer USB/Serial terhubung');
+            } catch (err) {
+                console.error(err);
+                updatePrinterStatusBadge('Gagal / Dibatalkan', false);
+                showToast('Koneksi Serial dibatalkan atau gagal');
+            }
+        }
+
+        /**
+         * Mengonversi gambar logo (kustom atau default) menjadi command raster ESC/POS (GS v 0)
+         */
+        async function buildEscPosLogoBytes() {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                img.onload = () => {
+                    const maxWidth = 192; // Kelipatan 8 piksel (24 byte)
+                    const scale = Math.min(1, maxWidth / img.width);
+                    const w = Math.floor((img.width * scale) / 8) * 8 || 64;
+                    const h = Math.max(8, Math.floor(img.height * scale));
+
+                    const canvas = document.createElement('canvas');
+                    canvas.width = w;
+                    canvas.height = h;
+                    const ctx = canvas.getContext('2d');
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.fillRect(0, 0, w, h);
+                    ctx.drawImage(img, 0, 0, w, h);
+
+                    const imgData = ctx.getImageData(0, 0, w, h).data;
+                    const widthBytes = w / 8;
+                    const rasterData = new Uint8Array(widthBytes * h);
+
+                    for (let y = 0; y < h; y++) {
+                        for (let xByte = 0; xByte < widthBytes; xByte++) {
+                            let byteVal = 0;
+                            for (let bit = 0; bit < 8; bit++) {
+                                const x = xByte * 8 + bit;
+                                const idx = (y * w + x) * 4;
+                                const r = imgData[idx];
+                                const g = imgData[idx + 1];
+                                const b = imgData[idx + 2];
+                                const a = imgData[idx + 3];
+                                const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+                                if (a > 128 && lum < 160) {
+                                    byteVal |= (1 << (7 - bit));
+                                }
+                            }
+                            rasterData[y * widthBytes + xByte] = byteVal;
+                        }
+                    }
+
+                    // GS v 0 m xL xH yL yH d1...dk
+                    const header = [
+                        0x1B, 0x61, 0x01, // Center align
+                        0x1D, 0x76, 0x30, 0x00,
+                        widthBytes & 0xff, (widthBytes >> 8) & 0xff,
+                        h & 0xff, (h >> 8) & 0xff
+                    ];
+                    const combined = new Uint8Array(header.length + rasterData.length + 1);
+                    combined.set(header, 0);
+                    combined.set(rasterData, header.length);
+                    combined[combined.length - 1] = 0x0A; // Line feed
+                    resolve(combined);
+                };
+                img.onerror = () => resolve(new Uint8Array(0));
+
+                if (appConfig.customLogoDataUrl) {
+                    img.src = appConfig.customLogoDataUrl;
+                } else {
+                    // SVG Logo Pertamina sebagai data URI untuk dikonversi ke bitmap ESC/POS
+                    const svgStr = `<svg xmlns="http://www.w3.org/2000/svg" width="120" height="44" viewBox="0 0 120 44">
+                        <rect width="120" height="44" fill="white"/>
+                        <path d="M18 6L26 6L21 15L13 15L18 6Z" fill="black"/>
+                        <path d="M11 17L19 17L13.5 27L5.5 27L11 17Z" fill="black"/>
+                        <path d="M23 16L31 16L25.5 26L17.5 26L23 16Z" fill="black"/>
+                        <text x="35" y="24" font-family="Arial, sans-serif" font-weight="bold" font-size="13" fill="black">${appConfig.brandText || 'PERTAMINA'}</text>
+                    </svg>`;
+                    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr);
+                }
+            });
+        }
+
+        /**
+         * Membangun payload byte ESC/POS lengkap dari data struk aktif
+         */
+        async function generateEscPosPayload() {
+            const encoder = new TextEncoder();
+            const W = appConfig.escpos.charWidth || 32;
+            const chunks = [];
+
+            const pushCmd = (arr) => chunks.push(new Uint8Array(arr));
+            const pushText = (str) => chunks.push(encoder.encode(str + '\n'));
+
+            // Helper format kolom kiri-kanan & titik dua sejajar
+            const formatLR = (left, right) => {
+                const space = Math.max(1, W - left.length - right.length);
+                return left + ' '.repeat(space) + right;
+            };
+            const formatKV = (label, val, labelWidth = 14) => {
+                const paddedLabel = label.padEnd(labelWidth, ' ');
+                return `${paddedLabel}: ${val}`;
+            };
+            const wordWrap = (text, maxLen) => {
+                const words = text.split(' ');
+                const lines = [];
+                let current = '';
+                words.forEach(w => {
+                    if ((current + (current ? ' ' : '') + w).length <= maxLen) {
+                        current += (current ? ' ' : '') + w;
+                    } else {
+                        if (current) lines.push(current);
+                        current = w;
+                    }
+                });
+                if (current) lines.push(current);
+                return lines;
+            };
+
+            // 1. Initialize Printer (ESC @)
+            pushCmd([0x1B, 0x40]);
+
+            // 2. Logo Bitmap (jika diaktifkan)
+            if (appConfig.escpos.printLogo) {
+                const logoBytes = await buildEscPosLogoBytes();
+                if (logoBytes.length > 0) chunks.push(logoBytes);
+            }
+
+            // 3. Header SPBU (Center Align)
+            pushCmd([0x1B, 0x61, 0x01]);
+            if (!appConfig.escpos.printLogo || (appConfig.customLogoDataUrl && appConfig.showBrandWithLogo)) {
+                pushCmd([0x1B, 0x45, 0x01]); // Bold ON
+                pushText(appConfig.brandText || 'PERTAMINA');
+                pushCmd([0x1B, 0x45, 0x00]); // Bold OFF
+            }
+            pushText(document.getElementById('out-spbu-no').textContent);
+            pushText(document.getElementById('out-spbu-name').textContent.toUpperCase());
+            pushText(document.getElementById('out-spbu-addr').textContent.toUpperCase());
+            pushText('');
+
+            // 4. Info Shift & Waktu (Left Align)
+            pushCmd([0x1B, 0x61, 0x00]);
+            const shiftStr = `Shift: ${document.getElementById('out-shift').textContent}`;
+            const transStr = `No. Trans: ${document.getElementById('out-trans').textContent}`;
+            if (shiftStr.length + transStr.length + 1 <= W) {
+                pushText(formatLR(shiftStr, transStr));
+            } else {
+                pushText(shiftStr);
+                pushText(transStr);
+            }
+            pushText(`Waktu: ${document.getElementById('out-waktu').textContent}`);
+            pushText('-'.repeat(W));
+
+            // 5. Detail Pengisian
+            const kvWidth = W >= 42 ? 18 : 13;
+            pushText(formatKV('Pulau/Pompa', document.getElementById('out-pompa').textContent, kvWidth));
+            pushText(formatKV('Operator', document.getElementById('out-operator').textContent.toUpperCase(), kvWidth));
+            pushText(formatKV('Jenis BBM', document.getElementById('out-bbm-name').textContent.toUpperCase(), kvWidth));
+            pushText(formatKV('Volume', `${document.getElementById('out-volume').textContent} liter`, kvWidth));
+            pushText('');
+
+            // 6. Informasi Harga BBM
+            const isSubsidi = document.getElementById('in-is-subsidi').checked;
+            const hargaKvWidth = W >= 42 ? 20 : 17;
+            pushText('Informasi Harga BBM (Rp/Liter)');
+            if (isSubsidi) {
+                pushText(formatKV('Harga Non Subsidi', document.getElementById('out-harga-nonsubsidi').textContent, hargaKvWidth));
+                pushText(formatKV('Subsidi Pemerintah', document.getElementById('out-subsidi-liter').textContent, hargaKvWidth));
+            }
+            pushText(formatKV('Harga Jual', document.getElementById('out-harga-jual').textContent, hargaKvWidth));
+            pushText('');
+
+            // 7. Total Penjualan
+            pushText('Total Penjualan (Rp)');
+            if (isSubsidi) {
+                pushText(formatKV('Tanpa Subsidi', document.getElementById('out-total-tanpa-subsidi').textContent, hargaKvWidth));
+                pushText(formatKV('Subsidi Pemerintah', document.getElementById('out-total-subsidi').textContent, hargaKvWidth));
+            }
+            pushText(formatKV('Dibayar Konsumen', document.getElementById('out-dibayar').textContent, hargaKvWidth));
+            pushText('-'.repeat(W));
+
+            // 8. Pembayaran
+            const payMethod = document.getElementById('out-payment').textContent.toUpperCase();
+            const payAmount = document.getElementById('out-payment-amount').textContent;
+            pushText(payMethod);
+            pushText(formatLR('', payAmount));
+            pushText('-'.repeat(W));
+
+            // 9. Plat Nomor
+            const plat = document.getElementById('in-plat').value.trim().toUpperCase();
+            if (plat) {
+                pushText(formatKV('No. Plat', plat, 10));
+                pushText('');
+            }
+
+            // 10. Footer Pesan (Center Align)
+            pushCmd([0x1B, 0x61, 0x01]);
+            if (isSubsidi) {
+                const subVal = document.getElementById('out-total-subsidi').textContent;
+                const msg = `Anda mendapat subsidi dari Pemerintah sebesar Rp ${subVal} (Perhitungan Subsidi Unaudited atau Estimasi). Gunakan BBM Subsidi secara bijak.`;
+                wordWrap(msg, W).forEach(line => pushText(line));
+            } else {
+                pushText('Terima kasih atas kunjungan Anda.');
+                pushText('Selamat jalan dan semoga selamat sampai tujuan.');
+            }
+
+            // 11. Feed & Auto-Cut
+            const feedCount = Math.max(1, appConfig.escpos.feedLines || 4);
+            pushText('\n'.repeat(feedCount));
+            if (appConfig.escpos.autoCut) {
+                pushCmd([0x1D, 0x56, 0x42, 0x00]); // GS V 66 0 (Partial Cut)
+            }
+
+            // Gabungkan semua Uint8Array
+            const totalLen = chunks.reduce((acc, c) => acc + c.length, 0);
+            const fullBuffer = new Uint8Array(totalLen);
+            let offset = 0;
+            for (const c of chunks) {
+                fullBuffer.set(c, offset);
+                offset += c.length;
+            }
+            return fullBuffer;
+        }
+
+        /**
+         * Mengirim buffer byte ESC/POS ke perangkat Bluetooth atau Serial yang terhubung
+         */
+        async function sendBytesToEscPosPrinter(bytes) {
+            if (bleCharacteristic) {
+                // Kirim bertahap per 100 byte agar aman dari batas MTU BLE
+                const chunkSize = 100;
+                for (let i = 0; i < bytes.length; i += chunkSize) {
+                    const slice = bytes.slice(i, i + chunkSize);
+                    if (bleCharacteristic.properties.writeWithoutResponse) {
+                        await bleCharacteristic.writeValueWithoutResponse(slice);
+                    } else {
+                        await bleCharacteristic.writeValue(slice);
+                    }
+                    await new Promise(r => setTimeout(r, 25));
+                }
+                return true;
+            } else if (serialPort && serialPort.writable) {
+                const writer = serialPort.writable.getWriter();
+                await writer.write(bytes);
+                writer.releaseLock();
+                return true;
+            }
+            return false;
+        }
+
+        async function printEscPosDirect() {
+            if (!bleCharacteristic && !serialPort) {
+                showToast('Hubungkan printer ESC/POS dulu di menu Pengaturan');
+                openSettingsModal();
+                switchSettingsTab('printer');
+                return;
+            }
+            try {
+                showToast('Mengirim data ke printer ESC/POS...');
+                const payload = await generateEscPosPayload();
+                await sendBytesToEscPosPrinter(payload);
+                showToast('Struk berhasil dicetak via ESC/POS!');
+            } catch (err) {
+                console.error(err);
+                showToast('Gagal mencetak ke printer ESC/POS');
+            }
+        }
+
+        async function testPrintEscPos() {
+            if (!bleCharacteristic && !serialPort) {
+                showToast('Silakan hubungkan Bluetooth atau USB Serial terlebih dahulu');
+                return;
+            }
+            const enc = new TextEncoder();
+            const testCmd = new Uint8Array([
+                0x1B, 0x40,
+                0x1B, 0x61, 0x01,
+                ...enc.encode('=== TES PRINTER ESC/POS ===\nSPBU PERTAMINA READY\n\n\n\n'),
+                0x1D, 0x56, 0x42, 0x00
+            ]);
+            try {
+                await sendBytesToEscPosPrinter(testCmd);
+                showToast('Tes cetak terkirim!');
+            } catch (e) {
+                showToast('Gagal mengirim tes cetak');
+            }
+        }
+
+        async function downloadEscPosBinary() {
+            const payload = await generateEscPosPayload();
+            const blob = new Blob([payload], { type: 'application/octet-stream' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `struk_pertamina_${document.getElementById('in-trans').value || 'raw'}.bin`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('File raw ESC/POS (.bin) diunduh');
+        }
+
+        /**
+         * Format angka menggunakan pemisah ribuan koma (sesuai contoh struk: 135,000)
+         */
+        function formatNumber(num) {
+            return Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        }
+
+        /**
+         * Menampilkan notifikasi toast singkat
+         */
+        let toastTimer = null;
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            if (!toast) return;
+            toast.textContent = message;
+            toast.classList.remove('opacity-0');
+            toast.classList.add('opacity-100');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => {
+                toast.classList.remove('opacity-100');
+                toast.classList.add('opacity-0');
+            }, 2600);
+        }
+
+        /**
+         * Mengatur visibilitas baris informasi subsidi pada form & struk
+         */
+        function toggleSubsidiFields() {
+            const isSubsidi = document.getElementById('in-is-subsidi').checked;
+            const wrapNonSub = document.getElementById('wrap-harga-nonsubsidi');
+            const wrapSubLiter = document.getElementById('wrap-subsidi-liter');
+            const outHargaRows = document.getElementById('out-subsidi-harga-rows');
+            const outTotalRows = document.getElementById('out-subsidi-total-rows');
+            const outFooterSub = document.getElementById('out-footer-subsidi');
+            const outFooterNonSub = document.getElementById('out-footer-nonsubsidi');
+
+            if (isSubsidi) {
+                wrapNonSub.classList.remove('opacity-50', 'pointer-events-none');
+                wrapSubLiter.classList.remove('opacity-50', 'pointer-events-none');
+                outHargaRows.classList.remove('hidden');
+                outTotalRows.classList.remove('hidden');
+                outFooterSub.classList.remove('hidden');
+                outFooterNonSub.classList.add('hidden');
+            } else {
+                wrapNonSub.classList.add('opacity-50', 'pointer-events-none');
+                wrapSubLiter.classList.add('opacity-50', 'pointer-events-none');
+                outHargaRows.classList.add('hidden');
+                outTotalRows.classList.add('hidden');
+                outFooterSub.classList.add('hidden');
+                outFooterNonSub.classList.remove('hidden');
+            }
+            calculateFromHarga();
+        }
+
+        /**
+         * Menghitung ulang subsidi per liter & total saat harga berubah
+         */
+        function calculateFromHarga() {
+            const nonSub = parseFloat(document.getElementById('in-harga-nonsubsidi').value) || 0;
+            const jual = parseFloat(document.getElementById('in-harga-jual').value) || 0;
+            const subPerLiter = Math.max(0, nonSub - jual);
+            document.getElementById('in-subsidi-liter').value = subPerLiter;
+
+            const vol = parseFloat(document.getElementById('in-volume').value) || 0;
+            document.getElementById('in-bayar').value = Math.round(vol * jual);
+            updateReceipt();
+        }
+
+        /**
+         * Menghitung nominal bayar dari volume liter
+         */
+        function calculateFromVolume() {
+            const vol = parseFloat(document.getElementById('in-volume').value) || 0;
+            const jual = parseFloat(document.getElementById('in-harga-jual').value) || 0;
+            document.getElementById('in-bayar').value = Math.round(vol * jual);
+            updateReceipt();
+        }
+
+        /**
+         * Menghitung volume liter dari nominal yang dibayarkan konsumen
+         */
+        function calculateFromBayar() {
+            const bayar = parseFloat(document.getElementById('in-bayar').value) || 0;
+            const jual = parseFloat(document.getElementById('in-harga-jual').value) || 0;
+            if (jual > 0) {
+                const vol = bayar / jual;
+                document.getElementById('in-volume').value = vol.toFixed(2);
+            }
+            updateReceipt();
+        }
+
+        /**
+         * Mengisi waktu transaksi dengan waktu saat ini (DD/MM/YYYY HH:MM:SS)
+         */
+        function setNowTime() {
+            const now = new Date();
+            const pad = (n) => String(n).padStart(2, '0');
+            const formatted = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+            document.getElementById('in-waktu').value = formatted;
+            updateReceipt();
+        }
+
+        /**
+         * Mengacak nomor transaksi dan mengatur waktu ke saat ini
+         */
+        function generateRandomTrans() {
+            const randTrans = Math.floor(1000000 + Math.random() * 9000000);
+            document.getElementById('in-trans').value = randTrans;
+            setNowTime();
+            showToast('No. Transaksi & Waktu diperbarui');
+        }
+
+        /**
+         * Memperbarui seluruh tampilan pratinjau struk thermal
+         */
+        function updateReceipt() {
+            document.getElementById('out-spbu-no').textContent = document.getElementById('in-spbu-no').value;
+            document.getElementById('out-spbu-name').textContent = document.getElementById('in-spbu-name').value;
+            document.getElementById('out-spbu-addr').textContent = document.getElementById('in-spbu-addr').value;
+            document.getElementById('out-shift').textContent = document.getElementById('in-shift').value;
+            document.getElementById('out-trans').textContent = document.getElementById('in-trans').value;
+            document.getElementById('out-waktu').textContent = document.getElementById('in-waktu').value;
+
+            document.getElementById('out-pompa').textContent = document.getElementById('in-pompa').value;
+            document.getElementById('out-operator').textContent = document.getElementById('in-operator').value;
+            document.getElementById('out-bbm-name').textContent = document.getElementById('in-bbm-name').value;
+
+            const vol = parseFloat(document.getElementById('in-volume').value) || 0;
+            document.getElementById('out-volume').textContent = vol.toFixed(2);
+
+            const nonSub = parseFloat(document.getElementById('in-harga-nonsubsidi').value) || 0;
+            const subLiter = parseFloat(document.getElementById('in-subsidi-liter').value) || 0;
+            const jual = parseFloat(document.getElementById('in-harga-jual').value) || 0;
+            const bayar = parseFloat(document.getElementById('in-bayar').value) || 0;
+
+            const totalTanpaSub = Math.round(vol * nonSub);
+            const totalSub = Math.max(0, totalTanpaSub - Math.round(bayar));
+
+            document.getElementById('out-harga-nonsubsidi').textContent = formatNumber(nonSub);
+            document.getElementById('out-subsidi-liter').textContent = formatNumber(subLiter);
+            document.getElementById('out-harga-jual').textContent = formatNumber(jual);
+
+            document.getElementById('out-total-tanpa-subsidi').textContent = formatNumber(totalTanpaSub);
+            document.getElementById('out-total-subsidi').textContent = formatNumber(totalSub);
+            document.getElementById('out-dibayar').textContent = formatNumber(bayar);
+
+            const payment = document.getElementById('in-payment').value;
+            document.getElementById('out-payment').textContent = payment;
+            document.getElementById('out-payment-amount').textContent = formatNumber(bayar);
+
+            const plat = document.getElementById('in-plat').value.trim();
+            const platRow = document.getElementById('out-plat-row');
+            if (plat) {
+                platRow.classList.remove('hidden');
+                document.getElementById('out-plat').textContent = plat;
+            } else {
+                platRow.classList.add('hidden');
+            }
+
+            document.getElementById('out-footer-subsidi-val').textContent = formatNumber(totalSub);
+        }
+
+        /**
+         * Menerapkan preset jenis BBM yang dipilih
+         */
+        function applyBbmPreset() {
+            const presetKey = document.getElementById('in-bbm-preset').value;
+            if (presetKey === 'CUSTOM') return;
+
+            const data = appConfig.bbmPresets[presetKey] || DEFAULT_BBM_PRESETS[presetKey];
+            document.getElementById('in-bbm-name').value = presetKey;
+            document.getElementById('in-is-subsidi').checked = data.isSubsidi;
+            document.getElementById('in-harga-nonsubsidi').value = data.nonSubsidi;
+            document.getElementById('in-harga-jual').value = data.jual;
+
+            toggleSubsidiFields();
+            calculateFromBayar();
+        }
+// ... existing code ... -->
+        /**
+         * Mengembalikan seluruh data persis seperti pada gambar referensi
+         */
+        function resetToDefault() {
+            document.getElementById('in-spbu-no').value = appConfig.spbuNo || '5468104';
+            document.getElementById('in-spbu-name').value = appConfig.spbuName || 'SPBU GAJAH MADA NO. 331';
+            document.getElementById('in-spbu-addr').value = appConfig.spbuAddr || 'JL. GAJAH MADA NO.331';
+            document.getElementById('in-shift').value = '1';
+            document.getElementById('in-trans').value = '9112437';
+            document.getElementById('in-waktu').value = '19/11/2026 11:13:33';
+            document.getElementById('in-pompa').value = '7';
+            document.getElementById('in-operator').value = 'DEWI';
+            document.getElementById('in-plat').value = 'P1610GI';
+            document.getElementById('in-bbm-preset').value = 'PERTALITE';
+            document.getElementById('in-bbm-name').value = 'PERTALITE';
+            const pertalite = appConfig.bbmPresets['PERTALITE'] || DEFAULT_BBM_PRESETS['PERTALITE'];
+            document.getElementById('in-is-subsidi').checked = pertalite.isSubsidi;
+            document.getElementById('in-harga-nonsubsidi').value = pertalite.nonSubsidi;
+            document.getElementById('in-subsidi-liter').value = Math.max(0, pertalite.nonSubsidi - pertalite.jual);
+            document.getElementById('in-harga-jual').value = pertalite.jual;
+            document.getElementById('in-volume').value = '13.50';
+            document.getElementById('in-bayar').value = Math.round(13.50 * pertalite.jual);
+            document.getElementById('in-payment').value = 'CASH';
+
+            toggleSubsidiFields();
+            updateReceipt();
+            showToast('Data dikembalikan ke awal');
+        }
+
+        // Inisialisasi awal saat halaman dimuat
+        window.addEventListener('DOMContentLoaded', () => {
+            loadSavedConfig();
+            updateReceipt();
+        });
+    </script>
+</body>
+</html>
